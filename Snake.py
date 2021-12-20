@@ -3,6 +3,8 @@ import sys
 import random
 import time
 
+from pygame.event import Event
+
 
 class Game():
     def __init__(self):
@@ -14,6 +16,8 @@ class Game():
         self.black = pygame.Color(0, 0, 0)
         self.white = pygame.Color(255, 255, 255)
         self.brown = pygame.Color(165, 42, 42)
+
+        self.colors = [self.brown, self.red, self.black]
 
         self.fps_controller = pygame.time.Clock()
 
@@ -78,10 +82,11 @@ class Game():
         time.sleep(3)
         pygame.quit()
         sys.exit()
+                        
 
 
 class Snake():
-    def __init__(self, snake_color, snake_block):
+    def __init__(self, snake_color):
         self.snake_head_pos = [100, 50]
         self.snake_body = [[100, 50], [90, 50], [80, 50]]
         self.snake_color = snake_color
@@ -114,16 +119,27 @@ class Snake():
         self.snake_head_pos[1] += yChange
 
     def snake_body_mechanism(
-            self, score, food_pos, screen_width, screen_height, snake_block):
+            self, score, food_pos, food_color, screen_width, screen_height, snake_block, sn_colors, lastColor, snakeSpeed):
         self.snake_body.insert(0, list(self.snake_head_pos))
         if (self.snake_head_pos[0] == food_pos[0] and
                 self.snake_head_pos[1] == food_pos[1]):
+            if (lastColor == 1):
+                score += 2
+            else:
+                score += 1
+            if (lastColor == 2):
+                snakeSpeed = 40
+            else:
+                snakeSpeed = 20
+
             food_pos = [round(random.randrange(10, screen_width - snake_block) / 10.0) * 10.0,
                         round(random.randrange(10, screen_height - snake_block) / 10.0) * 10.0]
-            score += 1
+            lastColor = random.randint(0,len(sn_colors)-1)
+            food_color = sn_colors[lastColor]
+            
         else:
             self.snake_body.pop()
-        return score, food_pos
+        return score, food_pos, food_color, lastColor, snakeSpeed
 
     def draw_snake(self, play_surface, surface_color):
         play_surface.fill(surface_color)
@@ -150,6 +166,7 @@ class Snake():
 class Food():
     def __init__(self, food_color, screen_width, screen_height, snake_block):
         self.food_color = food_color
+        self.lastColor = 0
         self.food_size_x = snake_block
         self.food_size_y = snake_block
         self.food_pos = [round(random.randrange(10, screen_width - snake_block) / 10.0) * 10.0,
@@ -163,7 +180,7 @@ class Food():
 
 
 game = Game()
-snake = Snake(game.green, game.snake_block)
+snake = Snake(game.green)
 food = Food(game.brown, game.screen_width, game.screen_height, game.snake_block)
 
 game.init_and_check_for_errors()
@@ -174,8 +191,8 @@ while True:
 
     snake.validate_direction_and_change()
     snake.change_head_position(game.snake_block)
-    game.score, food.food_pos = snake.snake_body_mechanism(
-        game.score, food.food_pos, game.screen_width, game.screen_height, game.snake_block)
+    game.score, food.food_pos, food.food_color, food.lastColor, game.snake_speed = snake.snake_body_mechanism(
+        game.score, food.food_pos, food.food_color, game.screen_width, game.screen_height, game.snake_block, game.colors, food.lastColor, game.snake_speed)
     snake.draw_snake(game.play_surface, game.white)
 
     food.draw_food(game.play_surface)
